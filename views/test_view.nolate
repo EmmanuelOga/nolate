@@ -1,0 +1,3 @@
+nosub
+simple <%= 'sub' %>
+hash sub <%#x%>

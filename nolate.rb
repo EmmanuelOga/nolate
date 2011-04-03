@@ -35,14 +35,30 @@ def nolate_empty_binding
     return binding()
 end
 
-def nolate(str, sub = {})
-    str.gsub(/<%([=#])(.*?)%>/) do
-        if $1 == "="
-            eval $2, nolate_empty_binding, __FILE__, __LINE__
-        else
-            sub[$2.to_sym]
+def nolate_parse(str)
+    i = -1
+    str.split(/<%([=#].*?)%>/).map do |s|
+        i = i + 1
+        if i % 2 == 0 then        [s]
+        elsif s[1].ord == 32 then [:eval, s[1..-1]]
+        else                      [:sub, s[1..-1].to_sym]
         end
     end
+end
+
+def nolate_eval(template, sub = {})
+    b = nolate_empty_binding
+    template.map do |action, param|
+        case action
+        when :eval then eval(param, b, __FILE__, __LINE__)
+        when :sub  then sub[param]
+        else action
+        end
+    end.join
+end
+
+def nolate(str, sub={})
+    nolate_eval(nolate_parse(str), sub)
 end
 
 def nlt(viewname,sub={})
@@ -52,9 +68,9 @@ def nlt(viewname,sub={})
         if !File.exists?(filename)
             raise "NOLATE error: no template at #{filename}"
         end
-        $nlt_templates[viewname] = File.open(filename).read
+        $nlt_templates[viewname] = nolate_parse(File.open(filename).read)
     end
-    nolate($nlt_templates[viewname],sub)
+    nolate_eval($nlt_templates[viewname],sub)
 end
 
 def nlt_flush_templates

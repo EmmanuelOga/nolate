@@ -8,4 +8,12 @@ class NolateTest < Test::Unit::TestCase
         assert_equal(nolate("simple <%= 'sub' %>"),"simple sub")
         assert_equal(nolate("hash sub <%#x%>",{:x => 1}),"hash sub 1")
     end
+
+    def test_view
+        assert_equal(<<-OUTPUT, nlt("test_view.nolate", :x => 1))
+nosub
+simple sub
+hash sub 1
+OUTPUT
+    end
 end
